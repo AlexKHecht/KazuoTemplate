@@ -65,6 +65,63 @@
             color: #ffd700;
         }
 
+        .music-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .music-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            color: white;
+            padding: 0.3rem 0.7rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            min-width: 40px;
+        }
+
+        .music-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .music-btn.playing {
+            animation: pulse 2s infinite;
+            background: rgba(255, 215, 0, 0.3);
+        }
+
+        .music-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .song-title {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .song-title.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
         .hero {
             padding: 4rem 0;
             text-align: center;
@@ -259,9 +316,32 @@
                 display: none;
             }
 
+            .music-controls {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1001;
+                display: flex !important;
+                background: rgba(0, 0, 0, 0.8);
+                padding: 0.5rem;
+                border-radius: 25px;
+                backdrop-filter: blur(10px);
+            }
+
             .contact-info {
                 flex-direction: column;
                 gap: 1rem;
+            }
+
+            .song-title {
+                bottom: 80px;
+                left: 50%;
+                transform: translateX(-50%) translateY(100px);
+                text-align: center;
+            }
+
+            .song-title.show {
+                transform: translateX(-50%) translateY(0);
             }
         }
 
@@ -330,6 +410,13 @@
                 <li><a href="#inicio">Início</a></li>
                 <li><a href="#servicos">Serviços</a></li>
                 <li><a href="#contato">Contato</a></li>
+                <li>
+                    <div class="music-controls">
+                        <button id="prevSong" class="music-btn">⏮️</button>
+                        <button id="musicToggle" class="music-btn">🎵</button>
+                        <button id="nextSong" class="music-btn">⏭️</button>
+                    </div>
+                </li>
             </ul>
         </nav>
     </header>
@@ -339,13 +426,13 @@
             <div class="container">
                 <div class="hero-content">
                     <div class="hero-image">
-                        <img src="https://media.discordapp.net/attachments/1078324905264812053/1408149804097343488/image.png?ex=68a8b133&is=68a75fb3&hm=a4a3ed783668ad2fef78e4571a231176f7e0341308285f61120f54c2f4f1357b&=&format=webp&quality=lossless" alt="Kazuo - Desenvolvedor de Software" />
+                        <img src="https://cdn.discordapp.com/attachments/971526886079492197/1406017039260454942/20241017_172646.jpg?ex=68a82f28&is=68a6dda8&hm=f550a573852021eaacda731db1a0d478d6ed29008962674ea7ae8f8c9ebf20b4&" alt="Kazuo - Desenvolvedor de Software" />
                     </div>
                     <div class="hero-text">
                         <h1>Desenvolvimento de Software de Qualidade</h1>
                         <p>Soluções personalizadas para seus projetos com tecnologia de ponta e expertise comprovada.</p>
                         <div class="price-highlight">Apenas R$ 28,00</div>
-                        <p>Preço especial para desenvolvimento de software profissional (o mesmo preço de um boost, tá complicado aqui)</p>
+                        <p>Preço especial para desenvolvimento de software profissional (o mesmo preço de um boost no Tinder!)</p>
                         <a href="#contato" class="cta-button">Contratar Agora</a>
                     </div>
                 </div>
@@ -409,6 +496,17 @@
         </section>
     </main>
 
+    <!-- Background Music -->
+    <audio id="backgroundMusic">
+        <source src="" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <!-- Song Title Display -->
+    <div id="songTitle" class="song-title">
+        🎵 Nenhuma música selecionada
+    </div>
+
     <footer>
         <div class="container">
             <p>&copy; 2024 Kazuo @ Affinity Seguro. Todos os direitos reservados.</p>
@@ -459,6 +557,111 @@
         document.querySelectorAll('.service-card').forEach(card => {
             observer.observe(card);
         });
+
+        // Music Player with Multiple Songs
+        const musicBtn = document.getElementById('musicToggle');
+        const prevBtn = document.getElementById('prevSong');
+        const nextBtn = document.getElementById('nextSong');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const songTitleDisplay = document.getElementById('songTitle');
+        
+        // 🎵 ADD YOUR SONGS HERE - Just update this array with your filenames and titles!
+        const playlist = [
+            { file: 'musicas/shimaBigode.mp3', title: 'ShimaBigode' },
+            { file: 'musicas/3-JoãoTifuTifu.mp3', title: 'Joao Tifu Tifu' },
+            { file: 'musicas/10-TifuTifuACadaPassoMais.mp3', title: 'Tifu Tifu a Cada Passo Mais' }
+            // Add more songs like this:
+            // { file: 'your-song.mp3', title: 'Nome da Música' }
+        ];
+
+        let currentSongIndex = 0;
+        let isPlaying = false;
+
+        // Load current song
+        function loadSong(index) {
+            if (playlist.length === 0) return;
+            
+            const song = playlist[index];
+            backgroundMusic.src = song.file;
+            songTitleDisplay.textContent = `🎵 ${song.title}`;
+            
+            // Show song title briefly
+            songTitleDisplay.classList.add('show');
+            setTimeout(() => {
+                if (!isPlaying) songTitleDisplay.classList.remove('show');
+            }, 3000);
+        }
+
+        // Play/Pause functionality
+        musicBtn.addEventListener('click', () => {
+            if (playlist.length === 0) {
+                alert('Nenhuma música disponível!');
+                return;
+            }
+
+            if (!isPlaying) {
+                backgroundMusic.play().then(() => {
+                    musicBtn.textContent = '⏸️';
+                    musicBtn.classList.add('playing');
+                    songTitleDisplay.classList.add('show');
+                    isPlaying = true;
+                }).catch(error => {
+                    console.log('Error playing audio:', error);
+                });
+            } else {
+                backgroundMusic.pause();
+                musicBtn.textContent = '🎵';
+                musicBtn.classList.remove('playing');
+                songTitleDisplay.classList.remove('show');
+                isPlaying = false;
+            }
+        });
+
+        // Previous song
+        prevBtn.addEventListener('click', () => {
+            if (playlist.length === 0) return;
+            
+            currentSongIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
+            loadSong(currentSongIndex);
+            
+            if (isPlaying) {
+                backgroundMusic.play();
+            }
+        });
+
+        // Next song
+        nextBtn.addEventListener('click', () => {
+            if (playlist.length === 0) return;
+            
+            currentSongIndex = (currentSongIndex + 1) % playlist.length;
+            loadSong(currentSongIndex);
+            
+            if (isPlaying) {
+                backgroundMusic.play();
+            }
+        });
+
+        // Auto-advance to next song when current ends
+        backgroundMusic.addEventListener('ended', () => {
+            currentSongIndex = (currentSongIndex + 1) % playlist.length;
+            loadSong(currentSongIndex);
+            if (isPlaying) {
+                backgroundMusic.play();
+            }
+        });
+
+        // Set volume and load first song
+        backgroundMusic.volume = 0.3;
+        if (playlist.length > 0) {
+            loadSong(0);
+        }
+
+        // Update button states based on playlist
+        if (playlist.length === 0) {
+            musicBtn.disabled = true;
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+        }
     </script>
 </body>
 </html>
