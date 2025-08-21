@@ -6,7 +6,7 @@ RUN rm -rf /usr/share/nginx/html/*
 
 # Copy the landing page to nginx html directory
 COPY index.html /usr/share/nginx/html/
-
+COPY musicas/ /usr/share/nginx/html/musicas/
 # Copy nginx configuration (optional, using default)
 # COPY nginx.conf /etc/nginx/nginx.conf
 
